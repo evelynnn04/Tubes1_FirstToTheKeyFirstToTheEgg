@@ -34,8 +34,6 @@ class FirstToTheKeyFirstToTheEggBot(BaseLogic):
         shortest_diamond_Y = 99
         n_diamond = 0
         
-        isTackle = False
-        
         button_step = 99
         button_X = 99
         button_Y = 99
@@ -96,28 +94,27 @@ class FirstToTheKeyFirstToTheEggBot(BaseLogic):
                     button_X = object.position.x
                     button_Y = object.position.y
     
-        if not isTackle:
-            if n_diamond == 1:
-                if board_bot.properties.diamonds == 0:
-                    step_to_center = abs(7-currX)+abs(7-currY)
-                    if step_to_center < button_step:
-                        target_X = 7
-                        target_Y = 7
-                    else:
-                        target_X = button_X
-                        target_Y = button_Y
+        if n_diamond == 1:
+            if board_bot.properties.diamonds == 0:
+                step_to_center = abs(7-currX)+abs(7-currY)
+                if step_to_center < button_step:
+                    target_X = 7
+                    target_Y = 7
                 else:
-                    target_X = board_bot.properties.base.x
-                    target_Y = board_bot.properties.base.y
-            else:
-                min_step = min(diamond_min_step,button_step)
-                if min_step == button_step and diamond_in_button_radar == 0:
                     target_X = button_X
                     target_Y = button_Y
-                else:
-                    target_X = shortest_diamond_X
-                    target_Y = shortest_diamond_Y
-        return (target_X, target_Y, isTackle)
+            else:
+                target_X = board_bot.properties.base.x
+                target_Y = board_bot.properties.base.y
+        else:
+            min_step = min(diamond_min_step,button_step)
+            if min_step == button_step and diamond_in_button_radar == 0 and board_bot.properties.diamonds < 4 :
+                target_X = button_X
+                target_Y = button_Y
+            else:
+                target_X = shortest_diamond_X
+                target_Y = shortest_diamond_Y
+        return (target_X, target_Y)
         
     def tackle(self,board_bot:GameObject,board:Board):
         currX = board_bot.position.x
@@ -142,147 +139,43 @@ class FirstToTheKeyFirstToTheEggBot(BaseLogic):
         return (dx,dy,isTackle)
             
     def next_move(self, board_bot: GameObject, board: Board):
+        # Tackle
         if board_bot.properties.diamonds < 2:
             tackle = self.tackle(board_bot,board)
             if tackle[2]:
                 return tackle[0], tackle[1]
+        # Iterate objects
         tempXY = self.getObjectsPosition(board_bot,board)
         delta_x = 0
         delta_y = 0
-        threshold = 4
+        threshold = 4 # Maximum iteration to decide delta_x and delta_y
         count = 0
         self.targetX = tempXY[0]
         self.targetY = tempXY[1]
-        while(delta_x == 0 and delta_y == 0 and count < threshold):
-            if tempXY[2]:
-                if(self.targetX!=99):
-                    if self.targetX < currX:
-                        delta_x = -1
-                        break
-                    elif self.targetX > currX:
-                        delta_x = 1
-                        break
-                    else:
-                        self.targetX = 99              
-                if(self.targetY!=99):
-                    if self.targetY < currY:
-                        delta_y = -1
-                        break
-                    elif self.targetY > currY:
-                        delta_y = 1
-                        break
-                    else:
-                        self.targetY = 99
-            else:           
-                currX = board_bot.position.x
-                currY = board_bot.position.y
-                original_step = abs(board_bot.position.x-board_bot.properties.base.x)+abs(board_bot.position.y-board_bot.properties.base.y)
-                tele1_step = (abs(currX-self.tele1_X)+abs(currY-self.tele1_Y))+(abs(board_bot.properties.base.x-self.tele2_X)+abs(board_bot.properties.base.y-self.tele2_Y))
-                tele2_step = (abs(currX-self.tele2_X)+abs(currY-self.tele2_Y))+(abs(board_bot.properties.base.x-self.tele1_X)+abs(board_bot.properties.base.y-self.tele1_Y))
-                min_target_step = min(original_step,tele1_step,tele2_step)
-                
-                if ((((board_bot.properties.milliseconds_left//1000))-min_target_step) <= 2):
-                    if min_target_step == tele1_step:
-                        self.targetX = self.tele1_X
-                        self.targetY = self.tele1_Y
-                    elif min_target_step == tele2_step:
-                        self.targetX = self.tele2_X
-                        self.targetY = self.tele2_Y
-                    else:
-                        self.targetX = board_bot.properties.base.x
-                        self.targetY = board_bot.properties.base.y
+        # Iterate
+        # Iteration might be done if the bot arrived at target position
+        while(delta_x == 0 and delta_y == 0 and count < threshold):         
+            currX = board_bot.position.x
+            currY = board_bot.position.y
+            # Hitung langkah kembali ke base dengan cara biasa dan dengan teleporter
+            original_step = abs(board_bot.position.x-board_bot.properties.base.x)+abs(board_bot.position.y-board_bot.properties.base.y)
+            tele1_step = (abs(currX-self.tele1_X)+abs(currY-self.tele1_Y))+(abs(board_bot.properties.base.x-self.tele2_X)+abs(board_bot.properties.base.y-self.tele2_Y))
+            tele2_step = (abs(currX-self.tele2_X)+abs(currY-self.tele2_Y))+(abs(board_bot.properties.base.x-self.tele1_X)+abs(board_bot.properties.base.y-self.tele1_Y))
+            min_target_step = min(original_step,tele1_step,tele2_step)
+            
+            # Endgame : Jika selisih antara sisa waktu permainan 
+            # dan langkah untuk kembali ke base = 2, maka kembali ke base
+            if ((((board_bot.properties.milliseconds_left//1000))-min_target_step) <= 2):
+                if min_target_step == tele1_step:
+                    self.targetX = self.tele1_X
+                    self.targetY = self.tele1_Y
+                elif min_target_step == tele2_step:
+                    self.targetX = self.tele2_X
+                    self.targetY = self.tele2_Y
+                else:
+                    self.targetX = board_bot.properties.base.x
+                    self.targetY = board_bot.properties.base.y
 
-                    if(self.targetX!=99):
-                        if self.targetX < currX:
-                            delta_x = -1
-                            break
-                        elif self.targetX > currX:
-                            delta_x = 1
-                            break
-                        else:
-                            self.targetX = 99
-                                        
-                    if(self.targetY!=99):
-                        if self.targetY < currY:
-                            delta_y = -1
-                            break
-                        elif self.targetY > currY:
-                            delta_y = 1
-                            break
-                        else:
-                            self.targetY = 99
-                elif (board_bot.properties.diamonds > 3):
-                    original_step = abs(currX-board_bot.properties.base.x)+abs(currY-board_bot.properties.base.y)
-                    tele1_step = (abs(currX-self.tele1_X)+abs(currY-self.tele1_Y))+(abs(board_bot.properties.base.x-self.tele2_X)+abs(board_bot.properties.base.y-self.tele2_Y))
-                    tele2_step = (abs(currX-self.tele2_X)+abs(currY-self.tele2_Y))+(abs(board_bot.properties.base.x-self.tele1_X)+abs(board_bot.properties.base.y-self.tele1_Y))
-                    min_target_step = min(original_step,tele1_step,tele2_step)
-                    if min_target_step == tele1_step:
-                        self.targetX = self.tele1_X
-                        self.targetY = self.tele1_Y
-                    elif min_target_step == tele2_step:
-                        self.targetX = self.tele2_X
-                        self.targetY = self.tele2_Y
-                    else:  
-                        self.targetX = board_bot.properties.base.x
-                        self.targetY = board_bot.properties.base.y
-                    
-                    if(self.targetX!=99):
-                        if self.targetX < currX:
-                            delta_x = -1
-                            break
-                        elif self.targetX > currX:
-                            delta_x = 1
-                            break
-                        else:
-                            self.targetX = 99
-                                        
-                    if(self.targetY!=99):
-                        if self.targetY < currY:
-                            delta_y = -1
-                            break
-                        elif self.targetY > currY:
-                            delta_y = 1
-                            break
-                        else:
-                            self.targetY = 99
-                elif(board_bot.properties.diamonds > 2):
-                    target_step = abs(tempXY[0]-currX)+abs(tempXY[1]-currY)
-                    original_step = abs(currX-board_bot.properties.base.x)+abs(currY-board_bot.properties.base.y)
-                    tele1_step = (abs(currX-self.tele1_X)+abs(currY-self.tele1_Y))+(abs(board_bot.properties.base.x-self.tele2_X)+abs(board_bot.properties.base.y-self.tele2_Y))
-                    tele2_step = (abs(currX-self.tele2_X)+abs(currY-self.tele2_Y))+(abs(board_bot.properties.base.x-self.tele1_X)+abs(board_bot.properties.base.y-self.tele1_Y))
-                    min_target_step = min(original_step,tele1_step,tele2_step,target_step)
-                    if min_target_step == target_step:
-                        self.targetX = tempXY[0]
-                        self.targetY = tempXY[1]
-                    elif min_target_step == tele1_step:
-                        self.targetX = self.tele1_X
-                        self.targetY = self.tele1_Y
-                    elif min_target_step == tele2_step:
-                        self.targetX = self.tele2_X
-                        self.targetY = self.tele2_Y
-                    else:  
-                        self.targetX = board_bot.properties.base.x
-                        self.targetY = board_bot.properties.base.y
-                    if(self.targetX!=99):
-                        if self.targetX < currX:
-                            delta_x = -1
-                            break
-                        elif self.targetX > currX:
-                            delta_x = 1
-                            break
-                        else:
-                            self.targetX = 99
-                                        
-                    if(self.targetY!=99):
-                        if self.targetY < currY:
-                            delta_y = -1
-                            break
-                        elif self.targetY > currY:
-                            delta_y = 1
-                            break
-                        else:
-                            self.targetY = 99
-                    
                 if(self.targetX!=99):
                     if self.targetX < currX:
                         delta_x = -1
@@ -301,9 +194,103 @@ class FirstToTheKeyFirstToTheEggBot(BaseLogic):
                         delta_y = 1
                         break
                     else:
-                        self.targetY = 99        
+                        self.targetY = 99
+            # Jika diamond di inventory sudah ada 4 atau 5 maka kembali ke base
+            elif (board_bot.properties.diamonds > 3):
+                # Hitung langkah kembali ke base dengan cara biasa dan dengan teleporter
+                original_step = abs(currX-board_bot.properties.base.x)+abs(currY-board_bot.properties.base.y)
+                tele1_step = (abs(currX-self.tele1_X)+abs(currY-self.tele1_Y))+(abs(board_bot.properties.base.x-self.tele2_X)+abs(board_bot.properties.base.y-self.tele2_Y))
+                tele2_step = (abs(currX-self.tele2_X)+abs(currY-self.tele2_Y))+(abs(board_bot.properties.base.x-self.tele1_X)+abs(board_bot.properties.base.y-self.tele1_Y))
+                min_target_step = min(original_step,tele1_step,tele2_step)
+                if min_target_step == tele1_step:
+                    self.targetX = self.tele1_X
+                    self.targetY = self.tele1_Y
+                elif min_target_step == tele2_step:
+                    self.targetX = self.tele2_X
+                    self.targetY = self.tele2_Y
+                else:  
+                    self.targetX = board_bot.properties.base.x
+                    self.targetY = board_bot.properties.base.y
+                
+                if(self.targetX!=99):
+                    if self.targetX < currX:
+                        delta_x = -1
+                        break
+                    elif self.targetX > currX:
+                        delta_x = 1
+                        break
+                    else:
+                        self.targetX = 99
+                                    
+                if(self.targetY!=99):
+                    if self.targetY < currY:
+                        delta_y = -1
+                        break
+                    elif self.targetY > currY:
+                        delta_y = 1
+                        break
+                    else:
+                        self.targetY = 99
+            else:
+                # target_step = abs(tempXY[0]-currX)+abs(tempXY[1]-currY)
+                # original_step = abs(currX-board_bot.properties.base.x)+abs(currY-board_bot.properties.base.y)
+                # tele1_step = (abs(currX-self.tele1_X)+abs(currY-self.tele1_Y))+(abs(board_bot.properties.base.x-self.tele2_X)+abs(board_bot.properties.base.y-self.tele2_Y))
+                # tele2_step = (abs(currX-self.tele2_X)+abs(currY-self.tele2_Y))+(abs(board_bot.properties.base.x-self.tele1_X)+abs(board_bot.properties.base.y-self.tele1_Y))
+                # min_target_step = min(original_step,tele1_step,tele2_step,target_step)
+                # if min_target_step == target_step:
+                #     self.targetX = tempXY[0]
+                #     self.targetY = tempXY[1]
+                # elif min_target_step == tele1_step:
+                #     self.targetX = self.tele1_X
+                #     self.targetY = self.tele1_Y
+                # elif min_target_step == tele2_step:
+                #     self.targetX = self.tele2_X
+                #     self.targetY = self.tele2_Y
+                # else:  
+                #     self.targetX = board_bot.properties.base.x
+                #     self.targetY = board_bot.properties.base.y
+                if(self.targetX!=99):
+                    if self.targetX < currX:
+                        delta_x = -1
+                        break
+                    elif self.targetX > currX:
+                        delta_x = 1
+                        break
+                    else:
+                        self.targetX = 99
+                                    
+                if(self.targetY!=99):
+                    if self.targetY < currY:
+                        delta_y = -1
+                        break
+                    elif self.targetY > currY:
+                        delta_y = 1
+                        break
+                    else:
+                        self.targetY = 99
+                
+            if(self.targetX!=99):
+                if self.targetX < currX:
+                    delta_x = -1
+                    break
+                elif self.targetX > currX:
+                    delta_x = 1
+                    break
+                else:
+                    self.targetX = 99
+                                
+            if(self.targetY!=99):
+                if self.targetY < currY:
+                    delta_y = -1
+                    break
+                elif self.targetY > currY:
+                    delta_y = 1
+                    break
+                else:
+                    self.targetY = 99        
             count+=1    
 
+        # Handling jika ternyata setelah hasil iterasi delta_x = delta_y
         if (delta_x == delta_y):
             if currX == 0:
                 delta_x = 1
@@ -320,5 +307,6 @@ class FirstToTheKeyFirstToTheEggBot(BaseLogic):
             else:
                 delta_x = 1
                 delta_y = 0
+                
         return delta_x, delta_y
     
