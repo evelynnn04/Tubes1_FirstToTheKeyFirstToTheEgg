@@ -1,6 +1,8 @@
 from game.logic.base import BaseLogic
 from game.models import Board, GameObject
 import math
+
+# Kalo kepanjangan namanya bisa disingkat FTKFTE
 class FirstToTheKeyFirstToTheEggBot(BaseLogic):
     
     targetX = 99
@@ -21,7 +23,8 @@ class FirstToTheKeyFirstToTheEggBot(BaseLogic):
         self.tele2_step = 99
         self.tele2_X = 99
         self.tele2_Y = 99
-        
+    
+    # Mengiterasi objek untuk mencari objek bertipe diamond, teleporter, dan button
     def getObjectsPosition(self,board_bot:GameObject,board:Board):
         target_X = 99
         target_Y = 99
@@ -42,20 +45,23 @@ class FirstToTheKeyFirstToTheEggBot(BaseLogic):
         
         isTele1 = True
 
+        # Iterasi objek
         for object in board.game_objects:
-            
+            # Dapatkan info diamond terdekat
             if object.type == "DiamondGameObject":
                 n_diamond+=1
                 if abs(object.position.x-button_X)+abs(object.position.y-button_Y) <= button_radar:
                     diamond_in_button_radar+=1
-                # Teleporter
+                # Teleporter (objek bertipe teleporter selalu berada di awal sehingga data teleporter sudah didapatkan terlebih dahulu)
                 step_in_tele1 = (abs(currX-self.tele1_X)+abs(currY-self.tele1_Y))+(abs(self.tele2_X-object.position.x)+abs(self.tele2_Y-object.position.y))
                 step_in_tele2 = (abs(currX-self.tele2_X)+abs(currY-self.tele2_Y))+(abs(self.tele1_X-object.position.x)+abs(self.tele1_Y-object.position.y))
                 # Original
                 temp_step = abs(object.position.y-board_bot.position.y) + abs(object.position.x-board_bot.position.x)
+                # Menentukan step terpendek
                 diamond_min_step_temp = min(temp_step,step_in_tele1,step_in_tele2)
                 if diamond_min_step_temp < diamond_min_step:
                     diamond_min_step = diamond_min_step_temp
+                    # Penentuan posisi koordinat target
                     if diamond_min_step == step_in_tele1:
                         shortest_diamond_X = self.tele1_X
                         shortest_diamond_Y = self.tele1_Y
@@ -65,8 +71,9 @@ class FirstToTheKeyFirstToTheEggBot(BaseLogic):
                     else:
                         shortest_diamond_X = object.position.x
                         shortest_diamond_Y = object.position.y
-
+            # Dapatkan info teleporter
             elif object.type == "TeleportGameObject":
+                # objek bertipe teleporter yang pertama ditemukan saat loop dianggap sebagai Tele1
                 if isTele1:
                     self.tele1_X = object.position.x
                     self.tele1_Y = object.position.y
@@ -76,7 +83,7 @@ class FirstToTheKeyFirstToTheEggBot(BaseLogic):
                     self.tele2_X = object.position.x
                     self.tele2_Y = object.position.y
                     self.tele2_step = abs(object.position.x-currX)+abs(object.position.y-currY)
-                    
+            # Dapatkan info button        
             elif object.type == "DiamondButtonGameObject":
                 button_X = object.position.x
                 button_Y = object.position.y
@@ -95,6 +102,10 @@ class FirstToTheKeyFirstToTheEggBot(BaseLogic):
                     button_Y = object.position.y
     
         if n_diamond == 1:
+            # Jika sisa diamond pada board adalah 1 dan jumlah diamond saat ini adalah 0
+            # Maka targetnya adalah pergi ke tengah dan bersiap untuk reset diamond
+            # setelah diamond terakhir diambil orang lain
+            # atau pergi ke button jika button lebih dekat dengan kita
             if board_bot.properties.diamonds == 0:
                 step_to_center = abs(7-currX)+abs(7-currY)
                 if step_to_center < button_step:
@@ -102,12 +113,18 @@ class FirstToTheKeyFirstToTheEggBot(BaseLogic):
                     target_Y = 7
                 else:
                     target_X = button_X
-                    target_Y = button_Y
+                    target_Y = button_Y      
+            # Jika sisa diamond pada board adalah 1 dan jumlah diamond saat ini > 0
+            # Maka lebih baik mengamankan terlebih dahulu ke base
             else:
                 target_X = board_bot.properties.base.x
                 target_Y = board_bot.properties.base.y
         else:
             min_step = min(diamond_min_step,button_step)
+            # Pergi ke button jika dan hanya jika:
+            # 1. Button adalah yang terdekat dan
+            # 2. Tidak ada diamond sama sekali di sekitar button dengan jarak 3 langkah dari button dan
+            # 3. Diamond saat ini < 4
             if min_step == button_step and diamond_in_button_radar == 0 and board_bot.properties.diamonds < 4 :
                 target_X = button_X
                 target_Y = button_Y
@@ -116,6 +133,8 @@ class FirstToTheKeyFirstToTheEggBot(BaseLogic):
                 target_Y = shortest_diamond_Y
         return (target_X, target_Y)
         
+    # Fungsi untuk mengiterasi objek bot lain dan menentukan apakah akan mencoba
+    # melakukan tackle atau tidak
     def tackle(self,board_bot:GameObject,board:Board):
         currX = board_bot.position.x
         currY = board_bot.position.y
@@ -124,7 +143,9 @@ class FirstToTheKeyFirstToTheEggBot(BaseLogic):
         dx = 0
         dy = 0
         
+        # Iterasi bot
         for bot in board.bots:
+            # Hanya bot dengan diamond > 2 yang diperhitungkan
             if bot.properties.diamonds > 2:
                 tackleX = bot.position.x-currX
                 tackleY = bot.position.y-currY
@@ -139,7 +160,7 @@ class FirstToTheKeyFirstToTheEggBot(BaseLogic):
         return (dx,dy,isTackle)
             
     def next_move(self, board_bot: GameObject, board: Board):
-        # Tackle
+        # Mencoba tackle hanya jika diamond saat ini < 2
         if board_bot.properties.diamonds < 2:
             tackle = self.tackle(board_bot,board)
             if tackle[2]:
@@ -232,23 +253,6 @@ class FirstToTheKeyFirstToTheEggBot(BaseLogic):
                     else:
                         self.targetY = 99
             else:
-                # target_step = abs(tempXY[0]-currX)+abs(tempXY[1]-currY)
-                # original_step = abs(currX-board_bot.properties.base.x)+abs(currY-board_bot.properties.base.y)
-                # tele1_step = (abs(currX-self.tele1_X)+abs(currY-self.tele1_Y))+(abs(board_bot.properties.base.x-self.tele2_X)+abs(board_bot.properties.base.y-self.tele2_Y))
-                # tele2_step = (abs(currX-self.tele2_X)+abs(currY-self.tele2_Y))+(abs(board_bot.properties.base.x-self.tele1_X)+abs(board_bot.properties.base.y-self.tele1_Y))
-                # min_target_step = min(original_step,tele1_step,tele2_step,target_step)
-                # if min_target_step == target_step:
-                #     self.targetX = tempXY[0]
-                #     self.targetY = tempXY[1]
-                # elif min_target_step == tele1_step:
-                #     self.targetX = self.tele1_X
-                #     self.targetY = self.tele1_Y
-                # elif min_target_step == tele2_step:
-                #     self.targetX = self.tele2_X
-                #     self.targetY = self.tele2_Y
-                # else:  
-                #     self.targetX = board_bot.properties.base.x
-                #     self.targetY = board_bot.properties.base.y
                 if(self.targetX!=99):
                     if self.targetX < currX:
                         delta_x = -1
