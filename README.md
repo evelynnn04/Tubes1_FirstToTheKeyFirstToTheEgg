@@ -15,7 +15,7 @@
 
 
 ## General Information
-- This project aims to solve Diamonds by _Greedy_ Algorithm. The game aims to get as much diamond as you can.
+- This project aims to solve Diamonds by _Greedy_ Algorithm. The objective of the game is to collect as many diamonds as possible within the given time limit.
 
 
 ## Setup
@@ -34,7 +34,7 @@
 
 1. Download source code (.zip) from (https://github.com/haziqam/tubes1-IF2211-game-engine/releases/tag/v1.1.0)
 
-2. Extract zip and go to the directory where you extract it and open the terminal.
+2. Extract zip and go to the directory where you extract it and open the terminal
 
 3. Go to project root directory and then do:
 
@@ -88,14 +88,13 @@
 
 
 ## Usage
-1. JELASIN CARA EDIT IMPLEMENTASI DI BOT NYA
-2. Buat file python baru pada direktori /game/logic
-3. Buatlah kelas baru yang meng-Inherit kelas BaseLogic, lalu implementasikan constructor dan method next_move pada kelas tersebut.
-4. Next_move akan mengembalikan nilai delta_x dan delta_y, dimana nilai yang diperbolehkan hanyalah (1, 0), (0, 1), (-1, 0), (0, -1). Apabila nilai ilegal atau di-luar range board, maka move akan diabaikan oleh program.
-5. Import kelas yang telah dibuat pada main.py dan daftarkan pada dictionary CONTROLLERS
-6. Jalankan game engine dan sesuaikan argumen logic pada command menjadi nama bot yang telah terdaftar pada CONTROLLERS. Anda dapat menjalankan satu bot saja atau beberapa bot menggunakan .bat atau .sh script.
+1. Buat file Python baru pada direktori /game/logic (misalnya BotStima.py)
+2. Buatlah kelas baru yang meng-Inherit kelas BaseLogic, lalu implementasikan constructor dan method next_move pada kelas tersebut
+3. Next_move akan mengembalikan nilai delta_x dan delta_y, dimana nilai yang diperbolehkan hanyalah (1, 0), (0, 1), (-1, 0), (0, -1). Apabila nilai ilegal atau di-luar range board, maka move akan diabaikan oleh program
+4. Import kelas yang telah dibuat pada main.py dan daftarkan pada dictionary CONTROLLERS
+5. Jalankan game engine dan sesuaikan argumen logic pada command menjadi nama bot yang telah terdaftar pada CONTROLLERS. Anda dapat menjalankan satu bot saja atau beberapa bot menggunakan .bat atau .sh script.
 
-### Scripts
+### Scripts untuk menjalankan bot
 
     `python main.py --logic <nama bot yang dijalankan> --email=your_email@example.com --name=your_name --password=your_password --team etimo`
 
