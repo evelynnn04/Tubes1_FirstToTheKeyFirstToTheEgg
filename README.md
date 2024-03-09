@@ -73,11 +73,10 @@
 #### c. Build
 
     `npm run build`
-
+    
 #### d. Run
 
     `npm run start`
-
 
 ### How to Run Bots
 
@@ -90,7 +89,15 @@
 
 ## Usage
 1. JELASIN CARA EDIT IMPLEMENTASI DI BOT NYA
+2. Buat file python baru pada direktori /game/logic
+3. Buatlah kelas baru yang meng-Inherit kelas BaseLogic, lalu implementasikan constructor dan method next_move pada kelas tersebut.
+4. Next_move akan mengembalikan nilai delta_x dan delta_y, dimana nilai yang diperbolehkan hanyalah (1, 0), (0, 1), (-1, 0), (0, -1). Apabila nilai ilegal atau di-luar range board, maka move akan diabaikan oleh program.
+5. Import kelas yang telah dibuat pada main.py dan daftarkan pada dictionary CONTROLLERS
+6. Jalankan game engine dan sesuaikan argumen logic pada command menjadi nama bot yang telah terdaftar pada CONTROLLERS. Anda dapat menjalankan satu bot saja atau beberapa bot menggunakan .bat atau .sh script.
 
+### Scripts
+
+    `python main.py --logic <nama bot yang dijalankan> --email=your_email@example.com --name=your_name --password=your_password --team etimo`
 
 ## Project Status
 Project is: _complete_.
